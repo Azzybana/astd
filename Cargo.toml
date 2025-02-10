@@ -10,7 +10,6 @@
     homepage = "https://azzybana.github.io/astd/"
     documentation = "https://docs.rs/astd/"
     readme = "README.md"
-    publish = false
     resolver = "3" # Requires Rust 1.84+
     keywords = ["no_std", "library", "api", "ffi", "bindings"]
     categories = [
