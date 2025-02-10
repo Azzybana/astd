@@ -193,15 +193,15 @@ fn main() {
     // Move the built DLL to the project root
     println!("6. Moving the built DLL to the project root");
     if cfg!(debug_assertions) {
-        let source = cmake_build_dir.join("bin/Release/abseil_dll.dll");
-        let destination = Path::new(OUTPUT_DIR).join("abseil.dll");
+        let _source = cmake_build_dir.join("bin/Release/abseil_dll.dll");
+        let _destination = Path::new(OUTPUT_DIR).join("abseil.dll");
     //    fs::rename(&source, &destination).expect("Failed to move DLL file");
     } else {
-        let source = cmake_build_dir.join("bin/Debug/abseil_dll.dll");
-        let destination = Path::new(OUTPUT_DIR).join("abseil_d.dll");
+        let _source = cmake_build_dir.join("bin/Debug/abseil_dll.dll");
+        let _destination = Path::new(OUTPUT_DIR).join("abseil_d.dll");
         //    fs::rename(&source, &destination).expect("Failed to move DLL file");
-        let source = cmake_build_dir.join("bin/Debug/abseil_dll.pdb");
-        let destination = Path::new(OUTPUT_DIR).join("abseil_d.pdb");
+        let _source = cmake_build_dir.join("bin/Debug/abseil_dll.pdb");
+        let _destination = Path::new(OUTPUT_DIR).join("abseil_d.pdb");
         //    fs::rename(&source, &destination).expect("Failed to move PDB file");
     }
     println!("Build script completed successfully.");
