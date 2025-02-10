@@ -1,93 +1,13 @@
-## ⚠️ **WARNING: This Library is UNSAFE BY DESIGN** ⚠️
+# astd: Abseil Std Utilities for `no_std` Rust
 
-# 🌺 SubStd 🌺
+## Overview
 
-*High-Performance Core Replacement Library*
+`astd` (Abseil-Standard Library) is a Rust library providing a selection of utility functions and data structures designed for `no_std` environments. The library takes inspiration from the Abseil C++ libraries, aiming to provide a drop in replacement for std, with entirely different underpinnings and perhaps some new features later.
 
-Welcome to SubStd - an experimental, performance-focused alternative implementation of Rust's std/core modules. This library prioritizes raw speed over safety guarantees!
+The key principle behind `astd` is to offer _alternatives_ to the standard Rust library (`std`) functionalities. This is particularly relevant in `no_std` contexts where control over dependencies and resource usage is paramount. Also allows alternatives without introducing std for debugging.
 
-It does not meet typical Rust promises of safety, so is a little sub-standard.
+I am in the process of writing a stripped down-ultra fast std replacement for bare metal from toasters to supercomputers, this project arose from that, I can get my bindings, and prove this isn't that crazy, since for this, I WILL adhere to Rust principles for safety.
 
-## 💫 Overview
+## Features
 
-SubStd provides blazing-fast alternatives to common std/core functionality by:
-
--   Removing runtime checks and bounds validation
--   Using unsafe optimizations aggressively
--   Providing zero-cost abstractions
--   Minimizing memory operations
--   Work around additional checks with it's own calls to externs.
--   Performs a valid action or aborts the process
-
-## 🎯 Goals
-
--   Maximum performance over safety
--   Drop-in replacement for std/core modules
--   Minimal runtime overhead
--   Platform-specific optimizations
-
-## ✨ Key Features
-
--   Unchecked operations for Vec, String, etc
--   Lock-free concurrent structures
--   SIMD-accelerated algorithms
--   Zero-allocation APIs where possible
--   Platform-specific assembly optimizations
--   Dumb enough to do what you tell it
--   Smart enough to tell you what caused panic in production
-
-## 🗺️ Roadmap
-
-### Future Goals
-
--   Since I'm still scaffolding, placed the first 2 stream handlers
--   Using kernel32, a console handler on windows
--   Using a boolean reference, and a static table, print to an led in morse code
--   This isn't a mistake
--   Part of the beauty of a rudimentary, fast, simple design is dexterity
-
-### Phase 1
-
--   Really, I'm still laying all the groundwork
--   Yes, I'm using AI to help with some of the scaffolding
--   No, I don't trust AI to get it right when you're working this unsafely
--   Everything it writes simply gives me keywords to narrow down docs and do it my way quickly
-
-## ⚡️ Performance
-
-Performance is our #1 priority! Expect:
-
--   Significantly faster than std for common operations
--   Works on any platform with rustc
--   #![no_std] compliant!
--   It's only error contol is to panic in production
-
-## 🚫 Limitations
-
--   Safety guarantees are minimal, it does as told
--   Not recommended for safety-critical systems
--   Requires careful usage and understanding
--   May cause undefined behavior if misused
--   By design, may panic in production
-
-## 🌸 Contributing
-
-This is a work in progress! Contributors welcome, but please note:
-
--   Safety is secondary to performance
--   Design requirements always require 'what caused a panic'
--   Breaking changes are expected
-
-## 💝 License
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+Does not yet brew tea. Things will be in flux. I dropped in the starter project, std src from rust, which I'm just going to use as a template. 740 files to rewrite. I totally got this.

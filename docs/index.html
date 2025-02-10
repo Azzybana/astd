@@ -176,68 +176,15 @@
         <title>p Animation</title>
     </head>
     <body>
-        <div class="header">substd</div>
+        <div class="header">astd</div>
         <div class="dashboard">
             <div class="content">
                 <content>
-                    <h2>Welcome to <i>unsafe as a feature!</i></h2>
+                    <h2>Drop in replacement for rust std, based on Abseil C++ libraries.</i></h2>
                     <p>
-                        I've had several people approach me, when I'm asking
-                        'stupid questions' and they all tell me what I want to
-                        do is not how Rust works. I don't buy that. Not for a
-                        minute. I like to play with microcontrollers. I have
-                        arm, aarch64, pic, pic32, and a few other devices. The
-                        orangepi has an onboard neural processor, and I really
-                        dislike using 'their' sofware to use it. I am new to
-                        Rust. I trusted my own C alloc and dealloc so much, it
-                        took years to come to grips with 'garbage collectors'
-                        when they added a plus. The one thing lacking from
-                        no-std is std. That's more profound a statement than you
-                        may think. I've been around the block once or twice, I'm
-                        not afraid of extern calls. I know how to use symbol
-                        servers. I'm not wanting to pull in the ENTIRE windows
-                        API though, way too much overhead. Also, every crate
-                        that does, adds it's own cpu cycles to the mess.
-                    </p>
-                    <p>
-                        I am looking to achieve the most stripped down,
-                        simplistic, bare, using-my-own-externs when I need to,
-                        calls. All compile time gated. No extra features you
-                        don't need, no extra cycles coming from the library
-                        between arches. It's about as close to bare metal as
-                        you're going to get on things above microcontrollers.
-                    </p>
-                    <p>
-                        When you're writing an allocator for a pic32 controller,
-                        and want the same code to work on a x86_64, exactly as
-                        written, there is no longer a promise of safety. It does
-                        mean reproducability. It also means speed.
-                    </p>
-                    <p>
-                        If the allocator knows how much space is left, you can
-                        reference for zero cost, prior to calling for allocation
-                        and comparing, more cheaply than the allocator can
-                        handle an error in alocation. The code works, and can
-                        work safely, if you handle the data like you would a
-                        microcontroller and do most of it yourself.
-                    </p>
-                    <p>
-                        Seriously, with the safety checks you can fit on a 16bit
-                        PIC controller, and hand that same instruction set to a
-                        modern CPU... be prepared for blazingly fast unsafety.
-                    </p>
-                    <h2>Status</h2>
-                    <p>
-                        Presently still scaffolding things. Stuff is changing.
-                        I'm still mapping interesting externs. Haven't even
-                        broken out the linux box yet. Yes, I've asked AI to
-                        scaffold a few things. It gives me keywords, and I
-                        rewrite it better. Worst junior dev ever, but at least
-                        knows the glossary of modern terms, lol. Once I'm able
-                        to handle basics on windows in no-std, I'll likely start
-                        working on my linux machine next. However, after console
-                        api, it can also flash an LED with morse code as string
-                        out. Bare metal is QUITE flexible. :)
+                        This sprang up as a result of another project. 
+                        Will give me bindings for that, useful more than niche people otherwise. 
+                        Rust is as rust does.
                     </p>
                     <h2>Docs</h2>
                     <p>
