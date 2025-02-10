@@ -1,7 +1,7 @@
 # Build artifacts
-/build
-/external
-/target
+/build/
+/external/
+/target/
 **/*.rs.bk
 
 # Build artifacts
