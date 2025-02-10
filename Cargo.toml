@@ -1,0 +1,68 @@
+[package]
+    name = "astd"
+    description = "A drop-in replacement for std in no-std environments, with full abseil backend."
+    version = "0.0.1"
+    edition = "2024"
+    rust-version = "1.85.0"
+    license = "Apache-2.0"
+    authors = ["Azzybana Raccoon <121582001+Azzybana@users.noreply.github.com>"]
+    repository = "https://github.com/Azzybana/substd"
+    homepage = "https://azzybana.github.io/substd/"
+    documentation = "https://docs.rs/substd/"
+    readme = "README.md"
+    publish = false
+    resolver = "3" # Requires Rust 1.84+
+    keywords = ["no_std", "library", "api", "ffi", "bindings"]
+    categories = [
+        "no-std",
+        "no-std::no-alloc",
+        "development-tools",
+        "api-bindings",
+        "external-ffi-bindings",
+    ]
+    exclude = ["src/bin/*"]
+
+    [package.metadata]
+        no-std = true
+
+[features]
+
+    # Default configuration is to target the host, and use logical guesses to find tools. 
+    default = [] # I really want this to not change.
+
+[dependencies]
+    # I want to keep it this way.
+
+[build-dependencies]
+    # MSVC, GCC, something else to compile the C++ code.
+    # CMake for the build script to build things. 
+    # Git to obtain the source. 
+
+[workspace]
+
+[lib]
+    name       = "astd"
+    path       = "src/lib.rs"
+    crate-type = ["rlib", "cdylib", "staticlib"]
+    edition    = "2024"
+
+[env]
+    CMAKE_CXX_STANDARD          = 20
+    CMAKE_CXX_STANDARD_REQUIRED = "ON"
+
+[profile.dev]
+    opt-level        = 1
+    debug            = true
+    lto              = "thin"
+    codegen-units    = 1
+    incremental      = true
+    debug-assertions = true
+
+[profile.release]
+    opt-level        = 3
+    debug            = false
+    lto              = "fat"
+    codegen-units    = 1
+    incremental      = false
+    overflow-checks  = false
+    debug-assertions = false
