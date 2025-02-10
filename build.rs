@@ -1,67 +1,70 @@
+#![allow(unsafe_code)]
+
+extern crate regex;
+
 use regex::Regex;
+use std::io::{BufWriter, Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
-use std::{fs, io::Result, process::Command, str};
+use std::{
+    fs::{self, File},
+    io::Result,
+    process::Command,
+    str,
+};
 
 ////
 //// Statics and Constants
 ////
+static mut CONFIG_FLAGS: Vec<&'static str> = Vec::new();
+static mut COMPILE_FLAGS: Vec<&'static str> = Vec::new();
+macro_rules! define_lazy_path {
+    ($name:ident, $path:expr) => {
+        static $name: LazyLock<PathBuf> = LazyLock::new(|| PathBuf::from($path));
+    };
+}
+fn add_flag(flags: &mut Vec<&'static str>, flag: &'static str) {
+    flags.push(flag);
+}
 
-/// Always required
+// Always required
 static MINIMUM_GIT_VERSION: [u8; 3] = [2, 40, 0]; // Still maintained
 static MINIMUM_CMAKE_VERSION: [u8; 3] = [3, 31, 0]; // Features for C++20
 const ABSEIL_SRC: &str = "https://github.com/abseil/abseil-cpp.git";
 
-/// Directories
-static BUILD_DIR: LazyLock<PathBuf> = LazyLock::new(|| PathBuf::from("target/"));
-static SOURCE_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
-    let mut path = BUILD_DIR.clone();
-    path.push("abseil-cpp/");
-    path
-});
-static ABSEIL_BUILD_DIR: LazyLock<PathBuf> = LazyLock::new(|| {
-    let mut path = SOURCE_DIR.clone();
-    path.push("build/");
-    path
-});
-static _OUTPUT_DIR: LazyLock<PathBuf> = LazyLock::new(|| PathBuf::from("external/"));
+// Directories
+define_lazy_path!(BUILD_DIR, "target/");
+define_lazy_path!(SOURCE_DIR, "target/abseil-cpp/");
+define_lazy_path!(ABSEIL_BUILD_DIR, "target/abseil-cpp/build/");
+define_lazy_path!(OUTPUT_DIR, "external/");
+define_lazy_path!(BIND_FILE, "external/bindings.cpp");
+define_lazy_path!(INCLUDE_DIR, "external/include/");
+define_lazy_path!(LIB_DIR, "external/lib/");
 
-/// Build flags for CMake
-const CONFIG_FLAGS: [&str; 4] = [
-    "-DABSL_USE_GOOGLETEST_HEAD=ON",
-    "-DCMAKE_CXX_STANDARD_REQUIRED=ON",
-    "-DCMAKE_CXX_STANDARD=20",
-    #[cfg(all(target_os = "windows", target_env = "msvc"))]
-    "-DABSL_MSVC_STATIC_RUNTIME=ON",
-];
-#[cfg(debug_assertions)]
-static CONFIG_TYPE_FLAGS: &str = "-DCMAKE_BUILD_TYPE=Debug";
-#[cfg(not(debug_assertions))]
-static BUILD_TYPE_FLAGS: &str = "-DCMAKE_BUILD_TYPE=Release";
+fn build_flags() {
+    unsafe {
+        // Build flags for CMake
+        add_flag(&mut CONFIG_FLAGS, "-DABSL_USE_GOOGLETEST_HEAD=ON");
+        add_flag(&mut CONFIG_FLAGS, "-DCMAKE_CXX_STANDARD_REQUIRED=ON");
+        add_flag(&mut CONFIG_FLAGS, "-DCMAKE_CXX_STANDARD=20");
+        #[cfg(debug_assertions)]
+        add_flag(&mut CONFIG_FLAGS, "-DCMAKE_BUILD_TYPE=Debug");
+        #[cfg(not(debug_assertions))]
+        add_flag(&mut CONFIG_FLAGS, "-DCMAKE_BUILD_TYPE=Release");
+        #[cfg(all(target_os = "windows", target_env = "msvc"))]
+        add_flag(&mut CONFIG_FLAGS, "-DABSL_MSVC_STATIC_RUNTIME=ON");
 
-/// Windows Compile-Time flags
-#[allow(dead_code)]
-#[cfg(all(target_os = "windows", target_env = "msvc"))]
-static MINIMUM_MSVC_VERSION: [u8; 2] = [19, 22]; // CMake supported C++20
-const COMPILE_FLAGS: [&str; 4] = ["--build", ".", "--", "/p:Platform=x64"];
-#[cfg(all(target_os = "windows", target_env = "msvc", debug_assertions))]
-static COMPILE_TYPE_FLAGS: &str = "/p:Configuration=Debug";
-#[cfg(all(target_os = "windows", target_env = "msvc", not(debug_assertions)))]
-static COMPILE_TYPE_FLAGS: &str = "/p:Configuration=Release";
-
-////
-//// Macros
-////
-
-/// Macro that combines two sets of flags into a Vec<&str> by iterating, chaining, and copying.
-macro_rules! combine_flags {
-    ($primary:expr, $secondary:expr) => {{
-        $primary
-            .iter()
-            .chain($secondary.iter())
-            .copied()
-            .collect::<Vec<&str>>()
-    }};
+        // Windows Compile-Time flags
+        #[cfg(all(target_os = "windows", target_env = "msvc"))]
+        add_flag(&mut COMPILE_FLAGS, "--build");
+        add_flag(&mut COMPILE_FLAGS, ".");
+        add_flag(&mut COMPILE_FLAGS, "--");
+        add_flag(&mut COMPILE_FLAGS, "/p:Platform=x64");
+        #[cfg(all(target_os = "windows", target_env = "msvc", debug_assertions))]
+        add_flag(&mut COMPILE_FLAGS, "/p:Configuration=Debug");
+        #[cfg(all(target_os = "windows", target_env = "msvc", not(debug_assertions)))]
+        add_flag(&mut COMPILE_FLAGS, "/p:Configuration=Release");
+    }
 }
 
 ////
@@ -71,38 +74,66 @@ macro_rules! combine_flags {
 /// The real main function.
 fn __build() {
     println!("Performing library build...");
+    build_flags();
     println!(" ");
 
+    // Pre-build checks
     println!("---");
     println!("Confirming build environment...");
     basics_check();
     println!(" ");
 
+    // Create build directory
     println!("---");
     println!("Creating build directory...");
     create_path(&BUILD_DIR).expect("Unable to create build directory");
     println!(" ");
 
+    // Git clone
     println!("---");
     println!("Obtaining abseil-cpp source code...");
     run_command("git", &["clone", ABSEIL_SRC], &BUILD_DIR);
     println!(" ");
 
+    // Create abseil build directory
     println!("---");
     println!("Creating Abseil build directory...");
     create_path(&ABSEIL_BUILD_DIR).expect("Unable to create Abseil build directory");
     println!(" ");
 
+    // Cmake config
     println!("---");
     println!("Running CMake config...");
-    let cmake_config_args = combine_flags!(CONFIG_FLAGS, [CONFIG_TYPE_FLAGS, ".."]);
-    run_command("cmake", &cmake_config_args, &ABSEIL_BUILD_DIR);
+    unsafe {
+        add_flag(&mut CONFIG_FLAGS, "..");
+        run_command("cmake", &CONFIG_FLAGS, &ABSEIL_BUILD_DIR);
+    }
     println!(" ");
 
+    // Cmake build
     println!("---");
     println!("Running CMake build...");
-    let cmake_build_args = combine_flags!(COMPILE_FLAGS, [COMPILE_TYPE_FLAGS]);
-    run_command("cmake", &cmake_build_args, &ABSEIL_BUILD_DIR);
+    unsafe {
+        run_command("cmake", &CONFIG_FLAGS, &ABSEIL_BUILD_DIR);
+    }
+
+    // Gather libs
+    println!("---");
+    println!("Gathering built libraries...");
+    gather_libs();
+    println!(" ");
+
+    // Gather includes
+    println!("---");
+    println!("Gathering include files...");
+    gather_includes();
+    println!(" ");
+
+    // Generate bindings
+    println!("---");
+    println!("Generating bindings...");
+    generate_bindings().expect("Failed to generate bindings");
+    println!(" ");
 
     //println!("6. Moving the built DLL to the project root");
     //if cfg!(debug_assertions) {
@@ -123,7 +154,7 @@ fn __build() {
 }
 
 ////
-//// Helpers
+//// Generic Helpers
 ////
 
 /// Creates the directory (including any necessary parent directories)
@@ -154,6 +185,200 @@ pub fn run_command(command: &str, args: &[&str], path: &std::path::Path) -> Stri
     }
     return String::from_utf8(output.stdout).unwrap();
 }
+
+////
+//// Gathering helpers
+////
+
+/// Gathers all the built libs, pdbs, and exps.
+fn gather_libs() {
+    let source = &*ABSEIL_BUILD_DIR;
+    let destination = &*LIB_DIR;
+
+    // Create the destination directory if it does not exist.
+    create_path(&*LIB_DIR).expect("Unable to create output directory");
+
+    // Recursively walk the directory tree.
+    fn visit_dirs(dir: &Path, destination: &Path) -> Result<()> {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                visit_dirs(&path, destination)?;
+            } else if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
+                if ext == "lib" || ext == "pdb" || ext == "exp" {
+                    let file_name = path.file_name().expect("File must have a name");
+                    let dest_path = destination.join(file_name);
+                    fs::copy(&path, &dest_path)
+                        .unwrap_or_else(|_| panic!("Failed copying {:?} to {:?}", path, dest_path));
+                }
+            }
+        }
+        Ok(())
+    }
+    visit_dirs(source, &destination).expect("Failed to gather libs");
+}
+
+/// Gather inclusion tree
+fn gather_includes() {
+    let source = &*ABSEIL_BUILD_DIR.join("absl");
+    let destination = &*INCLUDE_DIR;
+
+    // Create the destination root directory if it does not exist.
+    create_path(&*INCLUDE_DIR).expect("Unable to create include directory");
+
+    // Recursively walk the directory tree starting at `source`,
+    // computing the relative path for each header file, then copy it to `destination`.
+    fn visit_dirs(src_dir: &Path, dest_dir: &Path, base: &Path) -> Result<()> {
+        for entry in fs::read_dir(src_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                visit_dirs(&path, dest_dir, base)?;
+            } else if path.extension().and_then(|s| s.to_str()) == Some("h") {
+                // Compute the relative path from the base (ABSEIL_BUILD_DIR/absl)
+                let relative_path = path
+                    .strip_prefix(base)
+                    .expect("Failed to compute relative path");
+                let dest_file_path = dest_dir.join(relative_path);
+                // Ensure the parent directories exist
+                if let Some(parent) = dest_file_path.parent() {
+                    fs::create_dir_all(parent)?;
+                }
+                fs::copy(&path, &dest_file_path).unwrap_or_else(|_| {
+                    panic!("Failed copying {:?} to {:?}", path, dest_file_path)
+                });
+            }
+        }
+        Ok(())
+    }
+    visit_dirs(&source, &destination, &source).expect("Failed to gather include files");
+}
+
+////
+//// Bindings helpers
+////
+
+fn generate_bindings() -> Result<()> {
+    // Set the directory that contains your header files.
+    let headers_dir = &*INCLUDE_DIR;
+    // Output file that will contain the generated wrappers.
+    let bindings_path = &*BIND_FILE;
+    let bindings_file = File::create(&bindings_path)?;
+    let mut writer = BufWriter::new(bindings_file);
+
+    // Write the header for the generated file.
+    writeln!(writer, "// language: C++")?;
+    writeln!(
+        writer,
+        "// This file is auto-generated. It includes all header files from the external folder"
+    )?;
+    writeln!(writer)?;
+
+    // Begin extern "C" block.
+    writeln!(writer, "#ifdef __cplusplus")?;
+    writeln!(writer, "extern \"C\" {{")?;
+    writeln!(writer, "#endif")?;
+    writeln!(writer)?;
+
+    // Recursively scan for header files and include them.
+    generate_bind_includes(headers_dir, headers_dir, &mut writer)?;
+
+    writeln!(writer)?;
+    // Now generate wrappers for functions found in the header files.
+    generate_bind_wrappers(headers_dir, &mut writer)?;
+
+    writeln!(writer)?;
+    writeln!(writer, "#ifdef __cplusplus")?;
+    writeln!(writer, "}}")?;
+    writeln!(writer, "#endif")?;
+    writeln!(writer)?;
+
+    println!("Generated wrapper file at: {:?}", bindings_path);
+    Ok(())
+}
+
+/// Recursively traverses `base_dir` and writes an #include for each header.
+fn generate_bind_includes(
+    base_dir: &Path,
+    current_dir: &Path,
+    writer: &mut BufWriter<File>,
+) -> std::io::Result<()> {
+    for entry in fs::read_dir(current_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            generate_bind_includes(base_dir, &path, writer)?;
+        } else if let Some(ext) = path.extension() {
+            if ext.to_string_lossy().eq_ignore_ascii_case("h") {
+                // Build the include path relative to base_dir.
+                let relative_path = path.strip_prefix(base_dir).unwrap();
+                // Use forward slashes in C++ include paths.
+                let include_path = relative_path.to_string_lossy().replace("\\", "/");
+                writeln!(writer, "#include \"{}\"", include_path)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Searches for function declarations in header files and generates simple wrapper stubs.
+/// NOTE: This is a very simplistic approach that uses a regex to match C-style
+/// function declarations. Real-world headers may require a proper parser.
+fn generate_bind_wrappers(headers_dir: &Path, writer: &mut BufWriter<File>) -> std::io::Result<()> {
+    // This regex is a naive attempt to capture a return type and a function name.
+    // It will match lines like:
+    //   int my_function(...);
+    // and capture "int" and "my_function".
+    // Adjust the regex to suit your headers.
+    let func_regex =
+        Regex::new(r"(?m)^\s*(template\s*<[^;:{]+>\s*)?([\w:\*&<>\s]+)\s+(\w+)\s*\(").unwrap();
+
+    // Recursively find all .h files
+    for entry in fs::read_dir(headers_dir)? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir() {
+            generate_bind_wrappers(&path, writer)?;
+        } else if let Some(ext) = path.extension() {
+            if ext.to_string_lossy().eq_ignore_ascii_case("h") {
+                let mut file = File::open(&path)?;
+                let mut contents = String::new();
+                file.read_to_string(&mut contents)?;
+
+                for cap in func_regex.captures_iter(&contents) {
+                    let cap = cap; // Directly use the captured match.
+                    let return_type = cap.get(1).unwrap().as_str().trim();
+                    let func_name = cap.get(2).unwrap().as_str().trim();
+                    // Skip if the function name is a macro or already wrapped.
+                    if func_name.starts_with("LOW_LEVEL_ALLOC") {
+                        continue;
+                    }
+                    // Write a simple wrapper.
+                    // (Here we assume a void wrapper with no parameters for demonstration.
+                    // In practice you would want to capture the full signature.)
+                    writeln!(
+                        writer,
+                        "  // Wrapper for function declared in {:?}",
+                        path.file_name().unwrap()
+                    )?;
+                    writeln!(
+                        writer,
+                        "  {ret} {name}_wrapper() {{ return {name}(); }}",
+                        ret = return_type,
+                        name = func_name
+                    )?;
+                    writeln!(writer)?;
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+////
+//// Versioning Helpers
+////
 
 /// Checks if the given version string meets or exceeds the required version.
 fn is_version_valid(version_token: &str, req: [u8; 3]) -> bool {
@@ -230,5 +455,7 @@ fn basics_check() {
 ////
 
 fn main() {
-    __build()
+    unsafe {
+        __build();
+    }
 }
