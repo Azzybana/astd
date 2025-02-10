@@ -33,6 +33,8 @@
     # I want to keep it this way.
 
 [build-dependencies]
+    # Needed for generating the bindings.
+    regex = "1.11.1"
     # MSVC, GCC, something else to compile the C++ code.
     # CMake for the build script to build things. 
     # Git to obtain the source. 
