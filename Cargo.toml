@@ -45,14 +45,6 @@
     crate-type = ["rlib", "cdylib", "staticlib"]
     edition    = "2024"
 
-[build]
-    target     = "native"
-    target_dir = "build"
-
-[env]
-    CMAKE_CXX_STANDARD          = 20
-    CMAKE_CXX_STANDARD_REQUIRED = "ON"
-
 [profile.dev]
     opt-level        = 1
     debug            = true
