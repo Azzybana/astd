@@ -195,14 +195,14 @@ fn main() {
     if cfg!(debug_assertions) {
         let source = cmake_build_dir.join("bin/Release/abseil_dll.dll");
         let destination = Path::new(OUTPUT_DIR).join("abseil.dll");
-        fs::rename(&source, &destination).expect("Failed to move DLL file");
+    //    fs::rename(&source, &destination).expect("Failed to move DLL file");
     } else {
         let source = cmake_build_dir.join("bin/Debug/abseil_dll.dll");
         let destination = Path::new(OUTPUT_DIR).join("abseil_d.dll");
-        fs::rename(&source, &destination).expect("Failed to move DLL file");
+        //    fs::rename(&source, &destination).expect("Failed to move DLL file");
         let source = cmake_build_dir.join("bin/Debug/abseil_dll.pdb");
         let destination = Path::new(OUTPUT_DIR).join("abseil_d.pdb");
-        fs::rename(&source, &destination).expect("Failed to move PDB file");
+        //    fs::rename(&source, &destination).expect("Failed to move PDB file");
     }
     println!("Build script completed successfully.");
 }
