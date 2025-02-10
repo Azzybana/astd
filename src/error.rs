@@ -1,4 +1,4 @@
-#![doc = include_str!("../../core/src/error.md")]
+//#![doc = include_str!("../../core/src/error.md")]
 #![stable(feature = "rust1", since = "1.0.0")]
 
 #[stable(feature = "rust1", since = "1.0.0")]
@@ -464,7 +464,11 @@ where
     fn fmt_singleline(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.error)?;
 
-        let sources = self.error.source().into_iter().flat_map(<dyn Error>::sources);
+        let sources = self
+            .error
+            .source()
+            .into_iter()
+            .flat_map(<dyn Error>::sources);
 
         for cause in sources {
             write!(f, ": {cause}")?;
@@ -498,7 +502,11 @@ where
 
         if self.show_backtrace {
             if let Some(backtrace) = self.backtrace() {
-                write!(f, "\n\nStack backtrace:\n{}", backtrace.to_string().trim_end())?;
+                write!(
+                    f,
+                    "\n\nStack backtrace:\n{}",
+                    backtrace.to_string().trim_end()
+                )?;
             }
         }
 
@@ -512,7 +520,11 @@ where
     E: Error,
 {
     fn from(error: E) -> Self {
-        Report { error, show_backtrace: false, pretty: false }
+        Report {
+            error,
+            show_backtrace: false,
+            pretty: false,
+        }
     }
 }
 
@@ -522,7 +534,11 @@ where
     E: Error,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.pretty { self.fmt_multiline(f) } else { self.fmt_singleline(f) }
+        if self.pretty {
+            self.fmt_multiline(f)
+        } else {
+            self.fmt_singleline(f)
+        }
     }
 }
 

@@ -73,7 +73,11 @@ pub fn current_dir() -> io::Result<PathBuf> {
 /// assert!(env::set_current_dir(&root).is_ok());
 /// println!("Successfully changed working directory to {}!", root.display());
 /// ```
-#[doc(alias = "chdir", alias = "SetCurrentDirectory", alias = "SetCurrentDirectoryW")]
+#[doc(
+    alias = "chdir",
+    alias = "SetCurrentDirectory",
+    alias = "SetCurrentDirectoryW"
+)]
 #[stable(feature = "env", since = "1.0.0")]
 pub fn set_current_dir<P: AsRef<Path>>(path: P) -> io::Result<()> {
     os_imp::chdir(path.as_ref())
@@ -150,14 +154,18 @@ pub fn vars() -> Vars {
 #[must_use]
 #[stable(feature = "env", since = "1.0.0")]
 pub fn vars_os() -> VarsOs {
-    VarsOs { inner: os_imp::env() }
+    VarsOs {
+        inner: os_imp::env(),
+    }
 }
 
 #[stable(feature = "env", since = "1.0.0")]
 impl Iterator for Vars {
     type Item = (String, String);
     fn next(&mut self) -> Option<(String, String)> {
-        self.inner.next().map(|(a, b)| (a.into_string().unwrap(), b.into_string().unwrap()))
+        self.inner
+            .next()
+            .map(|(a, b)| (a.into_string().unwrap(), b.into_string().unwrap()))
     }
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.inner.size_hint()
@@ -167,8 +175,12 @@ impl Iterator for Vars {
 #[stable(feature = "std_debug", since = "1.16.0")]
 impl fmt::Debug for Vars {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Self { inner: VarsOs { inner } } = self;
-        f.debug_struct("Vars").field("inner", &inner.str_debug()).finish()
+        let Self {
+            inner: VarsOs { inner },
+        } = self;
+        f.debug_struct("Vars")
+            .field("inner", &inner.str_debug())
+            .finish()
     }
 }
 
@@ -483,7 +495,9 @@ pub struct SplitPaths<'a> {
 /// ```
 #[stable(feature = "env", since = "1.0.0")]
 pub fn split_paths<T: AsRef<OsStr> + ?Sized>(unparsed: &T) -> SplitPaths<'_> {
-    SplitPaths { inner: os_imp::split_paths(unparsed.as_ref()) }
+    SplitPaths {
+        inner: os_imp::split_paths(unparsed.as_ref()),
+    }
 }
 
 #[stable(feature = "env", since = "1.0.0")]
@@ -860,7 +874,9 @@ pub fn args() -> Args {
 /// ```
 #[stable(feature = "env", since = "1.0.0")]
 pub fn args_os() -> ArgsOs {
-    ArgsOs { inner: sys::args::args() }
+    ArgsOs {
+        inner: sys::args::args(),
+    }
 }
 
 #[stable(feature = "env_unimpl_send_sync", since = "1.26.0")]
@@ -900,7 +916,9 @@ impl DoubleEndedIterator for Args {
 #[stable(feature = "std_debug", since = "1.16.0")]
 impl fmt::Debug for Args {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Self { inner: ArgsOs { inner } } = self;
+        let Self {
+            inner: ArgsOs { inner },
+        } = self;
         f.debug_struct("Args").field("inner", inner).finish()
     }
 }
@@ -979,7 +997,7 @@ pub mod consts {
     ///
     /// </details>
     #[stable(feature = "env", since = "1.0.0")]
-    pub const ARCH: &str = env!("STD_ENV_ARCH");
+    //pub const ARCH: &str = env!("STD_ENV_ARCH");
 
     /// A string describing the family of the operating system.
     /// An example value may be: `"unix"`, or `"windows"`.
